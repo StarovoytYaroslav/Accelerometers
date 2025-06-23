@@ -125,34 +125,34 @@ void read_gyroscope()
 
 void app_main(void)
 {
-    // i2c_master_init();
-    // i2c_scan();
-
     i2c_master_init();
+    i2c_scan();
 
-    uint8_t id;
-    bno055_read_bytes(0x00, &id, 1);  // Read CHIP_ID
-    printf("Chip ID: 0x%02X\n", id);  // Should print 0xA0
+    // i2c_master_init();
 
-    bno055_write_byte(0x3D, 0x00); // Set to CONFIGMODE
-    vTaskDelay(pdMS_TO_TICKS(25));
+    // uint8_t id;
+    // bno055_read_bytes(0x00, &id, 1);  // Read CHIP_ID
+    // printf("Chip ID: 0x%02X\n", id);  // Should print 0xA0
 
-    bno055_write_byte(0x3B, 0x00); // UNIT_SEL - m/s², degrees, Celsius
-    bno055_write_byte(0x07, 0x00); // PAGE_ID = 0
+    // bno055_write_byte(0x3D, 0x00); // Set to CONFIGMODE
+    // vTaskDelay(pdMS_TO_TICKS(25));
 
-    bno055_write_byte(0x3D, 0x0C); // Set to NDOF mode
-    vTaskDelay(pdMS_TO_TICKS(25));
+    // bno055_write_byte(0x3B, 0x00); // UNIT_SEL - m/s², degrees, Celsius
+    // bno055_write_byte(0x07, 0x00); // PAGE_ID = 0
 
-    printf("BNO055 initialized in NDOF mode.\n");
+    // bno055_write_byte(0x3D, 0x0C); // Set to NDOF mode
+    // vTaskDelay(pdMS_TO_TICKS(25));
 
-    while (1)
-    {
-        read_accel();
-        vTaskDelay(1);
-        read_orientation();
-        vTaskDelay(1);
-        read_gyroscope();
-        vTaskDelay(10);
-    }
+    // printf("BNO055 initialized in NDOF mode.\n");
+
+    // while (1)
+    // {
+    //     read_accel();
+    //     vTaskDelay(1);
+    //     read_orientation();
+    //     vTaskDelay(1);
+    //     read_gyroscope();
+    //     vTaskDelay(10);
+    // }
     
 }
