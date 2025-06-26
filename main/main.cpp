@@ -17,8 +17,9 @@
 #include "Arduino.h"
 #include "SparkFun_BNO080_Arduino_Library.h"
 
-// #define I2C_MASTER_SDA_IO       GPIO_NUM_5
-// #define I2C_MASTER_SCL_IO       GPIO_NUM_6
+#define I2C_MASTER_SDA_IO       GPIO_NUM_5
+#define I2C_MASTER_SCL_IO       GPIO_NUM_6
+#define I2C_MASTER_PORT_0         I2C_NUM_1
 #define I2C_MASTER_SDA_IO_0       GPIO_NUM_9
 #define I2C_MASTER_SCL_IO_0       GPIO_NUM_8
 #define I2C_MASTER_PORT_0         I2C_NUM_0
@@ -45,7 +46,7 @@ void BNO055_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num);
 
 void BNO055_read(i2c_port_t i2c_num);
 
-void app_main(void)
+extern "C" void app_main(void)
 {
     BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
     while (1)
@@ -184,49 +185,3 @@ void read_gyroscope(i2c_port_t i2c_num)
     printf("Gyroscope: X=%.2f Y=%.2f Z=%.2f °/s\n", ax / 16.0, ay / 16.0, az / 16.0);
 
 }
-<<<<<<< HEAD:main/main.cpp
-
-extern "C" void app_main(void)
-{
-    initArduino();
-
-    BNO080 myIMU;
-
-    while(1)
-    {
-        i2c_master_init();
-        i2c_scan();
-        vTaskDelay(1000);
-    }
-    
-
-    // i2c_master_init();
-
-    // uint8_t id;
-    // bno055_read_bytes(0x00, &id, 1);  // Read CHIP_ID
-    // printf("Chip ID: 0x%02X\n", id);  // Should print 0xA0
-
-    // bno055_write_byte(0x3D, 0x00); // Set to CONFIGMODE
-    // vTaskDelay(pdMS_TO_TICKS(25));
-
-    // bno055_write_byte(0x3B, 0x00); // UNIT_SEL - m/s², degrees, Celsius
-    // bno055_write_byte(0x07, 0x00); // PAGE_ID = 0
-
-    // bno055_write_byte(0x3D, 0x0C); // Set to NDOF mode
-    // vTaskDelay(pdMS_TO_TICKS(25));
-
-    // printf("BNO055 initialized in NDOF mode.\n");
-
-    // while (1)
-    // {
-    //     read_accel();
-    //     vTaskDelay(1);
-    //     read_orientation();
-    //     vTaskDelay(1);
-    //     read_gyroscope();
-    //     vTaskDelay(10);
-    // }
-    
-}
-=======
->>>>>>> main:main/main.c
