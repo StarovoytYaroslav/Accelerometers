@@ -1,11 +1,6 @@
-/*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: CC0-1.0
- */
-
 #include <stdio.h>
 #include <inttypes.h>
+#include "main.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,172 +11,105 @@
 #include "esp_log.h"
 #include "Arduino.h"
 #include "SparkFun_BNO080_Arduino_Library.h"
-
-#define I2C_MASTER_SDA_IO       GPIO_NUM_5
-#define I2C_MASTER_SCL_IO       GPIO_NUM_6
-#define I2C_MASTER_PORT_0         I2C_NUM_1
-#define I2C_MASTER_SDA_IO_0       GPIO_NUM_9
-#define I2C_MASTER_SCL_IO_0       GPIO_NUM_8
-#define I2C_MASTER_PORT_0         I2C_NUM_0
-#define I2C_MASTER_FREQ_HZ      100000
-#define I2C_MASTER_TIMEOUT_MS   1000
+#include "BNOs.h"
+#include "driver/uart.h"
 
 static const char *TAG = "i2c_scan";
 
-void i2c_master_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num);
+// static i2c_port_t BNO055_port;
+// static i2c_port_t BNO080_port;
 
-void i2c_scan(i2c_port_t i2c_num);
+#define UART_PORT_NUM UART_NUM_0 // USB CDC on ESP32-S3
+#define UART_BUF_SIZE (1024)
 
-esp_err_t bno055_write_byte(i2c_port_t i2c_num, uint8_t reg, uint8_t data);
+#define CMD_BUFFER_SIZE 128
 
-esp_err_t bno055_read_bytes(i2c_port_t i2c_num, uint8_t reg, uint8_t *buf, size_t len);
+char cmd_buffer[CMD_BUFFER_SIZE];
+int cmd_index = 0;
 
-void read_accel(i2c_port_t i2c_num);
+void uart_init(void)
+{
+    const uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+    };
+    uart_driver_install(UART_PORT_NUM, UART_BUF_SIZE * 2, 0, 0, NULL, 0);
+    uart_param_config(UART_PORT_NUM, &uart_config);
+    uart_set_pin(UART_PORT_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE,
+                 UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+}
 
-void read_orientation(i2c_port_t i2c_num);
+BNO080 myIMU;
 
-void read_gyroscope(i2c_port_t i2c_num);
+void handle_uart_command(const char *cmd)
+{
 
-void BNO055_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num);
-
-void BNO055_read(i2c_port_t i2c_num);
+    // if (strcmp(cmd, "ping") == 0)
+    // {
+        // uart_write_bytes(UART_PORT_NUM, "pong\n", 5);
+        uart_write_bytes(UART_PORT_NUM, cmd, 5);
+    // }
+    // if (strcmp(cmd, "accel") == 0) {
+    //     // Example: Replace with your BNO080 reading code
+    //     float ax = 0.12, ay = 0.05, az = 9.81;
+    //     char msg[64];
+    //     snprintf(msg, sizeof(msg), "Accel: X=%.2f Y=%.2f Z=%.2f\n", ax, ay, az);
+    //     uart_write_bytes(UART_PORT_NUM, msg, strlen(msg));
+    // }
+    // else if (strcmp(cmd, "reset") == 0) {
+    //     uart_write_bytes(UART_PORT_NUM, "Resetting sensor...\n", 21);
+    //     // Call your BNO080 soft reset here
+    // }
+    // else {
+    //     uart_write_bytes(UART_PORT_NUM, "Unknown command\n", 16);
+    // }
+}
 
 extern "C" void app_main(void)
 {
-    BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
-    while (1)
+    // initArduino(); // must call before setup()
+
+    // // setup();
+
+    // // vTaskDelay(pdMS_TO_TICKS(100));
+    // while (1)
+    // {
+    //     // loop();
+    //     vTaskDelay(pdMS_TO_TICKS(10));
+    // }
+
+    // i2c_master_init(I2C_MASTER_PORT_1, I2C_MASTER_SDA_IO_1, I2C_MASTER_SCL_IO_1);
+
+    // i2c_scan(I2C_MASTER_PORT_1);
+
+    // BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
+    // xTaskCreate(BNO055_read, "BNO055_read", 2048, NULL, 1, NULL);
+
+    uart_init();
+    printf("Ready for UART commands...\n");
+
+    while (true)
     {
-        BNO055_read(I2C_MASTER_PORT_0);
-        vTaskDelay(100);
-    }
-    
-}
+        uint8_t byte;
+        int len = uart_read_bytes(UART_PORT_NUM, &byte, 1, pdMS_TO_TICKS(10));
 
-void BNO055_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num)
-{
-    i2c_master_init(i2c_num, sda_io_num, scl_io_num);
-
-    uint8_t id;
-    bno055_read_bytes(i2c_num, 0x00, &id, 1);  // Read CHIP_ID
-    printf("Chip ID: 0x%02X\n", id);  // Should print 0xA0
-
-    bno055_write_byte(i2c_num, 0x3D, 0x00); // Set to CONFIGMODE
-    vTaskDelay(pdMS_TO_TICKS(25));
-
-    bno055_write_byte(i2c_num, 0x3B, 0x00); // UNIT_SEL - m/s², degrees, Celsius
-    bno055_write_byte(i2c_num, 0x07, 0x00); // PAGE_ID = 0
-
-    bno055_write_byte(i2c_num, 0x3D, 0x0C); // Set to NDOF mode
-    vTaskDelay(pdMS_TO_TICKS(25));
-
-    printf("BNO055 initialized in NDOF mode.\n");
-}
-
-void BNO055_read(i2c_port_t i2c_num)
-{
-        read_accel(i2c_num);
-        vTaskDelay(1);
-        read_orientation(i2c_num);
-        vTaskDelay(1);
-        read_gyroscope(i2c_num);
-}
-
-void i2c_master_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num)
-{
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = sda_io_num,
-        .scl_io_num = scl_io_num,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master = {
-            .clk_speed = I2C_MASTER_FREQ_HZ,
-        },
-    };
-    ESP_ERROR_CHECK(i2c_param_config(i2c_num, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(i2c_num, conf.mode, 0, 0, 0));
-}
-
-void i2c_scan(i2c_port_t i2c_num)
-{
-    ESP_LOGI(TAG, "Scanning I2C bus...");
-    for (int addr = 1; addr < 127; addr++) {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
-        i2c_master_stop(cmd);
-        esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-        i2c_cmd_link_delete(cmd);
-
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "Found device at 0x%02X", addr);
+        if (len > 0)
+        {
+            if (byte == '\n' || byte == '\r')
+            {
+                cmd_buffer[cmd_index] = '\0'; // Null-terminate
+                handle_uart_command(cmd_buffer);
+                cmd_index = 0; // Reset for next command
+            }
+            else if (cmd_index < CMD_BUFFER_SIZE - 1)
+            {
+                cmd_buffer[cmd_index++] = byte;
+            }
         }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
-}
-
-esp_err_t bno055_write_byte(i2c_port_t i2c_num, uint8_t reg, uint8_t data)
-{
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (0x28 << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, reg, true);
-    i2c_master_write_byte(cmd, data, true);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, pdMS_TO_TICKS(100));
-    i2c_cmd_link_delete(cmd);
-    return ret;
-}
-
-esp_err_t bno055_read_bytes(i2c_port_t i2c_num, uint8_t reg, uint8_t *buf, size_t len)
-{
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (0x28 << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, reg, true);
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (0x28 << 1) | I2C_MASTER_READ, true);
-    i2c_master_read(cmd, buf, len, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_num , cmd, pdMS_TO_TICKS(100));
-    i2c_cmd_link_delete(cmd);
-    return ret;
-}
-
-void read_accel(i2c_port_t i2c_num)
-{
-    uint8_t buffer[6];
-    bno055_read_bytes(i2c_num, 0x08, buffer, 6); // ACC_DATA_X_LSB
-
-    int16_t ax = (int16_t)((buffer[1] << 8) | buffer[0]);
-    int16_t ay = (int16_t)((buffer[3] << 8) | buffer[2]);
-    int16_t az = (int16_t)((buffer[5] << 8) | buffer[4]);
-
-    // Each LSB = 1 m/s² / 100 (default)
-    printf("Accel: X=%.2f Y=%.2f Z=%.2f m/s²\n", ax / 100.0, ay / 100.0, az / 100.0);
-}
-
-void read_orientation(i2c_port_t i2c_num)
-{
-    uint8_t buffer[6];
-    bno055_read_bytes(i2c_num, 0x1a, buffer, 6); // ACC_DATA_X_LSB
-
-    int16_t ax = (int16_t)((buffer[1] << 8) | buffer[0]);
-    int16_t ay = (int16_t)((buffer[3] << 8) | buffer[2]);
-    int16_t az = (int16_t)((buffer[5] << 8) | buffer[4]);
-    // Each LSB = 1 deg / 16 (default)
-    printf("Orientation: X=%.2f Y=%.2f Z=%.2f °\n", ax / 16.0, ay / 16.0, az / 16.0);
-
-}
-
-void read_gyroscope(i2c_port_t i2c_num)
-{
-    uint8_t buffer[6];
-    bno055_read_bytes(i2c_num, 0x14, buffer, 6); // ACC_DATA_X_LSB
-
-    int16_t ax = (int16_t)((buffer[1] << 8) | buffer[0]);
-    int16_t ay = (int16_t)((buffer[3] << 8) | buffer[2]);
-    int16_t az = (int16_t)((buffer[5] << 8) | buffer[4]);
-    // Each LSB = 1 deg / 16 (default)
-    printf("Gyroscope: X=%.2f Y=%.2f Z=%.2f °/s\n", ax / 16.0, ay / 16.0, az / 16.0);
-
 }
