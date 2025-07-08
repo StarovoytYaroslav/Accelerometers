@@ -118,11 +118,6 @@ set(ARDUINO_ALL_LIBRARIES
   WiFiProv
   Wire
   Zigbee
-  BNO080
-  # Libraries below was added manually, because of not standart format
-  # BNO055
-  # ADAFRUIT_BUSIO 
-  # ADAFRUIT_SENSOR
   )
 
 set(ARDUINO_LIBRARY_ArduinoOTA_SRCS libraries/ArduinoOTA/src/ArduinoOTA.cpp)
@@ -340,14 +335,6 @@ set(ARDUINO_LIBRARY_BLE_SRCS
   libraries/BLE/src/GeneralUtils.cpp
   )
 
-set(ARDUINO_LIBRARY_BNO080_SRCS libraries/BNO080/src/SparkFun_BNO080_Arduino_Library.cpp)
-set(ARDUINO_LIBRARY_BNO055_SRCS libraries/BNO055/Adafruit_BNO055.cpp)
-set(ARDUINO_LIBRARY_ADAFRUIT_BUSIO_SRCS libraries/ADAFRUIT_BUSIO/Adafruit_SPIDevice.cpp
-                                        libraries/ADAFRUIT_BUSIO/Adafruit_I2CDevice.cpp
-                                        libraries/ADAFRUIT_BUSIO/Adafruit_GenericDevice.cpp
-                                        libraries/ADAFRUIT_BUSIO/Adafruit_BusIO_Register.cpp)
-set(ARDUINO_LIBRARY_ADAFRUIT_SENSOR_SRCS libraries/ADAFRUIT_SENSOR/Adafruit_Sensor.cpp)                                        
-
 set(ARDUINO_LIBRARIES_SRCS)
 set(ARDUINO_LIBRARIES_REQUIRES)
 set(ARDUINO_LIBRARIES_INCLUDEDIRS)
@@ -364,19 +351,6 @@ foreach(libname IN LISTS ARDUINO_ALL_LIBRARIES)
     endif()
   endif()
 endforeach()
-
-# Manually added libraries mantioned above
-list(APPEND ARDUINO_LIBRARIES_SRCS ${ARDUINO_LIBRARY_BNO055_SRCS})
-list(APPEND ARDUINO_LIBRARIES_REQUIRES ${ARDUINO_LIBRARY_BNO055_REQUIRES})
-list(APPEND ARDUINO_LIBRARIES_INCLUDEDIRS libraries/BNO055)
-
-list(APPEND ARDUINO_LIBRARIES_SRCS ${ARDUINO_LIBRARY_ADAFRUIT_BUSIO_SRCS})
-list(APPEND ARDUINO_LIBRARIES_REQUIRES ${ARDUINO_LIBRARY_ADAFRUIT_BUSIO_REQUIRES})
-list(APPEND ARDUINO_LIBRARIES_INCLUDEDIRS libraries/ADAFRUIT_BUSIO)
-
-list(APPEND ARDUINO_LIBRARIES_SRCS ${ARDUINO_LIBRARY_ADAFRUIT_SENSOR_SRCS})
-list(APPEND ARDUINO_LIBRARIES_REQUIRES ${ARDUINO_LIBRARY_ADAFRUIT_SENSOR_REQUIRES})
-list(APPEND ARDUINO_LIBRARIES_INCLUDEDIRS libraries/ADAFRUIT_SENSOR)
 
 set(includedirs variants/${CONFIG_ARDUINO_VARIANT}/ cores/esp32/ ${ARDUINO_LIBRARIES_INCLUDEDIRS})
 set(srcs ${CORE_SRCS} ${ARDUINO_LIBRARIES_SRCS})
