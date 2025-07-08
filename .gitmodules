@@ -1,13 +1,13 @@
 [submodule "components/Adafruit_BusIO"]
 	path = components/Adafruit_BusIO
-	url = git@github.com:adafruit/Adafruit_BusIO.git
+	url = git@github.com:StarovoytYaroslav/Adafruit_BusIO.git
 [submodule "components/Adafruit_Sensor"]
 	path = components/Adafruit_Sensor
-	url = git@github.com:adafruit/Adafruit_Sensor.git
+	url = git@github.com:StarovoytYaroslav/Adafruit_Sensor.git
 [submodule "components/BNO080"]
         path = components/BNO080
-        url = git@github.com:sparkfun/SparkFun_BNO080_Arduino_Library.git
+        url = git@github.com:StarovoytYaroslav/SparkFun_BNO080_Arduino_Library.git
 [submodule "components/BNO055"]
         path = components/BNO055         
-        url = git@github.com:adafruit/Adafruit_BNO055.git
+        url = git@github.com:StarovoytYaroslav/Adafruit_BNO055.git
 
