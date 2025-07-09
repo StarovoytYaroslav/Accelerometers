@@ -12,10 +12,15 @@
 #include "Arduino.h"
 #include "SparkFun_BNO080_Arduino_Library.h"
 #include "Adafruit_BNO055.h"
+#include "HardwareSerial.h"
+// #include "USB.h"
 // #include "BNOs.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "i2c_scan";
+
+#define USER_LED GPIO_NUM_21  // Use your desired pin // XIAO
 
 // static i2c_port_t BNO055_port;
 // static i2c_port_t BNO080_port;
@@ -27,6 +32,18 @@ static const char *TAG = "i2c_scan";
 
 char cmd_buffer[CMD_BUFFER_SIZE];
 int cmd_index = 0;
+
+void configure_gpio()
+{
+    gpio_config_t io_conf = {
+        .pin_bit_mask = 1ULL << USER_LED,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&io_conf);
+}
 
 void uart_init(void)
 {
@@ -50,8 +67,8 @@ void handle_uart_command(const char *cmd)
 
     // if (strcmp(cmd, "ping") == 0)
     // {
-        // uart_write_bytes(UART_PORT_NUM, "pong\n", 5);
-        uart_write_bytes(UART_PORT_NUM, cmd, 5);
+    // uart_write_bytes(UART_PORT_NUM, "pong\n", 5);
+    uart_write_bytes(UART_PORT_NUM, cmd, 5);
     // }
     // if (strcmp(cmd, "accel") == 0) {
     //     // Example: Replace with your BNO080 reading code
@@ -71,6 +88,28 @@ void handle_uart_command(const char *cmd)
 
 extern "C" void app_main(void)
 {
+    configure_gpio();
+    // gpio_set_level(USER_LED, 1);
+    // HardwareSerial Serial(0);
+    initArduino();
+
+    // Arduino-like setup()
+    Serial.begin(115200);
+    while (!Serial)
+    {
+        ; // wait for serial port to connect
+    }
+
+    while (true)
+    {
+        if (Serial.available())
+        {
+            String cmd = Serial.readStringUntil('\n');
+            Serial.print("Received: ");
+            Serial.println(cmd);
+        }
+        vTaskDelay(10);
+    }
     // initArduino(); // must call before setup()
 
     // // setup();
@@ -89,28 +128,28 @@ extern "C" void app_main(void)
     // BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
     // xTaskCreate(BNO055_read, "BNO055_read", 2048, NULL, 1, NULL);
 
-    uart_init();
-    printf("Ready for UART commands...\n");
+    // uart_init();
+    // printf("Ready for UART commands...\n");
 
-    while (true)
-    {
-        uint8_t byte;
-        int len = uart_read_bytes(UART_PORT_NUM, &byte, 1, pdMS_TO_TICKS(10));
+    // while (true)
+    // {
+    //     uint8_t byte;
+    //     int len = uart_read_bytes(UART_PORT_NUM, &byte, 1, pdMS_TO_TICKS(10));
 
-        if (len > 0)
-        {
-            if (byte == '\n' || byte == '\r')
-            {
-                cmd_buffer[cmd_index] = '\0'; // Null-terminate
-                handle_uart_command(cmd_buffer);
-                cmd_index = 0; // Reset for next command
-            }
-            else if (cmd_index < CMD_BUFFER_SIZE - 1)
-            {
-                cmd_buffer[cmd_index++] = byte;
-            }
-        }
+    //     if (len > 0)
+    //     {
+    //         if (byte == '\n' || byte == '\r')
+    //         {
+    //             cmd_buffer[cmd_index] = '\0'; // Null-terminate
+    //             handle_uart_command(cmd_buffer);
+    //             cmd_index = 0; // Reset for next command
+    //         }
+    //         else if (cmd_index < CMD_BUFFER_SIZE - 1)
+    //         {
+    //             cmd_buffer[cmd_index++] = byte;
+    //         }
+    //     }
 
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
+    //     vTaskDelay(pdMS_TO_TICKS(10));
+    // }
 }
