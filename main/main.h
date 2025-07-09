@@ -8,5 +8,3 @@
 #define I2C_MASTER_PORT_0 I2C_NUM_0
 #define I2C_MASTER_FREQ_HZ 40000
 #define I2C_MASTER_TIMEOUT_MS 1000
-#define BNO055_address 0x28
-#define BNO080_address 0x4a

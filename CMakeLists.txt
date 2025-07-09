@@ -7,6 +7,6 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 add_definitions(
 -DARDUINO_USB_MODE
 -DARDUINO_USB_CDC_ON_BOOT
-)
+-DXIAO)
 
 project(BNO055)
