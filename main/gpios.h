@@ -1,9 +1,12 @@
 #pragma once
 
 #include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+
 #ifdef XIAO
     #define USER_LED GPIO_NUM_21    // XIAO 
     #define DEFAULT_VALUE 0
+    #define RST_PIN GPIO_NUM_43
 #elif HELTEC_WP
     #define USER_LED GPIO_NUM_18    //Wireless Paper
     #define DEFAULT_VALUE 1
@@ -15,4 +18,6 @@
 #endif
 
 void configure_gpio();
+
+void reset_BNO();
 

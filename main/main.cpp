@@ -12,7 +12,8 @@
 #include "Arduino.h"
 #include "SparkFun_BNO080_Arduino_Library.h"
 #include "Adafruit_BNO055.h"
-#include "led_controller.h"
+#include "gpios.h"
+#include "BNOs.h"
 
 #define UART_BUF_SIZE (1024)
 
@@ -35,18 +36,20 @@ extern "C" void app_main(void)
     {
         ; // wait for serial port to connect
     }
-
-    while (true)
-    {
-        if (Serial.available())
-        {
-            String cmd = Serial.readStringUntil('\n');
-            Serial.print("Received: ");
-            printf("Some text");
-            Serial.println(cmd);
-        }
-        vTaskDelay(10);
-    }
+    i2c_master_init(I2C_MASTER_SDA_IO_1, I2C_MASTER_SCL_IO_1,100000);
+    reset_BNO();
+    i2c_scan();
+    // while (true)
+    // {
+    //     if (Serial.available())
+    //     {
+    //         String cmd = Serial.readStringUntil('\n');
+    //         Serial.print("Received: ");
+    //         printf("Some text");
+    //         Serial.println(cmd);
+    //     }
+    //     vTaskDelay(10);
+    // }
     // initArduino(); // must call before setup()
 
     // // setup();
@@ -64,29 +67,4 @@ extern "C" void app_main(void)
 
     // BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
     // xTaskCreate(BNO055_read, "BNO055_read", 2048, NULL, 1, NULL);
-
-    // uart_init();
-    // printf("Ready for UART commands...\n");
-
-    // while (true)
-    // {
-    //     uint8_t byte;
-    //     int len = uart_read_bytes(UART_PORT_NUM, &byte, 1, pdMS_TO_TICKS(10));
-
-    //     if (len > 0)
-    //     {
-    //         if (byte == '\n' || byte == '\r')
-    //         {
-    //             cmd_buffer[cmd_index] = '\0'; // Null-terminate
-    //             handle_uart_command(cmd_buffer);
-    //             cmd_index = 0; // Reset for next command
-    //         }
-    //         else if (cmd_index < CMD_BUFFER_SIZE - 1)
-    //         {
-    //             cmd_buffer[cmd_index++] = byte;
-    //         }
-    //     }
-
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
 }

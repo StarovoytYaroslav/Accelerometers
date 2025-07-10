@@ -1,6 +1,39 @@
 #include "BNOs.h"
 #include "main.h"
 
+void i2c_master_init(int sda_pin, int scl_pin, uint32_t freq_hz)
+{
+    Wire.begin(sda_pin, scl_pin, 100000);
+    // Wire1.setClock(freq_hz);
+    Serial.println("I2C initialized");
+}
+
+void i2c_scan()
+{
+    Wire.beginTransmission(0x4b);
+    uint8_t error = Wire.endTransmission();
+    if (error == 0)
+    {
+        Serial.print("Found device at 0x");
+        Serial.println(0x4b, HEX);
+    }
+    Serial.println(error);
+    // Serial.println("Scanning I2C bus...");
+    // for (uint8_t addr = 1; addr < 127; addr++) {
+    //     Wire1.beginTransmission(addr);
+    //     uint8_t error = Wire1.endTransmission();
+
+    //     if (error == 0) {
+    //         Serial.print("Found device at 0x");
+    //         Serial.println(addr, HEX);
+    //     } else if (error == 4) {
+    //         Serial.print("Unknown error at 0x");
+    //         Serial.println(addr, HEX);
+    //     }
+    //     delay(10);
+// }
+}
+
 // void BNO055_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num)
 // {
 //     BNO055_port = i2c_num;
@@ -35,41 +68,6 @@
 //         vTaskDelay(100);
 //     }
 // }
-
-void i2c_master_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num)
-{
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = sda_io_num,
-        .scl_io_num = scl_io_num,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master = {
-            .clk_speed = I2C_MASTER_FREQ_HZ,
-        },
-    };
-    ESP_ERROR_CHECK(i2c_param_config(i2c_num, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(i2c_num, conf.mode, 0, 0, 0));
-}
-
-void i2c_scan(i2c_port_t i2c_num)
-{
-    ESP_LOGI(TAG, "Scanning I2C bus...");
-    for (int addr = 1; addr < 127; addr++)
-    {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
-        i2c_master_stop(cmd);
-        esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-        i2c_cmd_link_delete(cmd);
-
-        if (ret == ESP_OK)
-        {
-            ESP_LOGI(TAG, "Found device at 0x%02X", addr);
-        }
-    }
-}
 
 // esp_err_t bno055_write_byte(i2c_port_t i2c_num, uint8_t reg, uint8_t data)
 // {
