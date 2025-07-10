@@ -1,4 +1,4 @@
-#include "BNOs.h"
+#include "accelerometers.h"
 #include "main.h"
 
 void i2c_master_init(int sda_pin, int scl_pin, uint32_t freq_hz)
@@ -10,28 +10,23 @@ void i2c_master_init(int sda_pin, int scl_pin, uint32_t freq_hz)
 
 void i2c_scan()
 {
-    Wire.beginTransmission(0x4b);
-    uint8_t error = Wire.endTransmission();
-    if (error == 0)
+    Serial.println("Scanning I2C bus...");
+    for (uint8_t addr = 1; addr < 127; addr++)
     {
-        Serial.print("Found device at 0x");
-        Serial.println(0x4b, HEX);
-    }
-    Serial.println(error);
-    // Serial.println("Scanning I2C bus...");
-    // for (uint8_t addr = 1; addr < 127; addr++) {
-    //     Wire1.beginTransmission(addr);
-    //     uint8_t error = Wire1.endTransmission();
+        Wire.beginTransmission(addr);
+        uint8_t error = Wire.endTransmission();
 
-    //     if (error == 0) {
-    //         Serial.print("Found device at 0x");
-    //         Serial.println(addr, HEX);
-    //     } else if (error == 4) {
-    //         Serial.print("Unknown error at 0x");
-    //         Serial.println(addr, HEX);
-    //     }
-    //     delay(10);
-// }
+        if (error == 0)
+        {
+            Serial.print("Found device at 0x");
+            Serial.println(addr, HEX);
+        }
+        else if (error == 4)
+        {
+            Serial.print("Unknown error at 0x");
+            Serial.println(addr, HEX);
+        }
+    }
 }
 
 // void BNO055_init(i2c_port_t i2c_num, int sda_io_num, int scl_io_num)

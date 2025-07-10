@@ -4,8 +4,9 @@
 #include "Wire.h"
 // #include "SparkFun_BNO080_Arduino_Library.h"
 
-#define BNO055_address 0x28
-#define BNO080_address 0x4a
+#define BNO055_address  0x28
+#define BNO080_address  0x4a
+#define MPU6050_address 0x68 //GY-521
 
 void i2c_master_init(int sda_pin, int scl_pin, uint32_t freq_hz = 400000);
 
