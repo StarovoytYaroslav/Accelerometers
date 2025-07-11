@@ -15,14 +15,9 @@
 #include "gpios.h"
 #include "accelerometers.h"
 
-#define UART_BUF_SIZE (1024)
-
-#define CMD_BUFFER_SIZE 128
-
-char cmd_buffer[CMD_BUFFER_SIZE];
-int cmd_index = 0;
-
 BNO080 myIMU;
+
+BNO055Wrapper bno;
 
 extern "C" void app_main(void)
 {
@@ -32,39 +27,6 @@ extern "C" void app_main(void)
 
     // Arduino-like setup()
     Serial.begin(115200);
-    while (!Serial)
-    {
-        ; // wait for serial port to connect
-    }
-    i2c_master_init(I2C_MASTER_SDA_IO_1, I2C_MASTER_SCL_IO_1,100000);
-    reset_BNO();
-    i2c_scan();
-    // while (true)
-    // {
-    //     if (Serial.available())
-    //     {
-    //         String cmd = Serial.readStringUntil('\n');
-    //         Serial.print("Received: ");
-    //         printf("Some text");
-    //         Serial.println(cmd);
-    //     }
-    //     vTaskDelay(10);
-    // }
-    // initArduino(); // must call before setup()
-
-    // // setup();
-
-    // // vTaskDelay(pdMS_TO_TICKS(100));
-    // while (1)
-    // {
-    //     // loop();
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
-
-    // i2c_master_init(I2C_MASTER_PORT_1, I2C_MASTER_SDA_IO_1, I2C_MASTER_SCL_IO_1);
-
-    // i2c_scan(I2C_MASTER_PORT_1);
-
-    // BNO055_init(I2C_MASTER_PORT_0, I2C_MASTER_SDA_IO_0, I2C_MASTER_SCL_IO_0);
-    // xTaskCreate(BNO055_read, "BNO055_read", 2048, NULL, 1, NULL);
+    while (!Serial) {; /*wait for serial port to connect*/ }
+    
 }
