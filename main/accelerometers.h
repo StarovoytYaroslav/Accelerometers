@@ -5,6 +5,9 @@
 #include "main.h"
 #include "Adafruit_BNO055.h"
 #include "SparkFun_BNO080_Arduino_Library.h"
+#include "gpios.h"
+#include "Adafruit_ADXL345_U.h"
+#include "Adafruit_MPU6050.h"
 
 #define BNO055_address 0x28
 /*
@@ -37,12 +40,14 @@ class AccelWrapper
 {
 protected:
     static bool isConfigured;
-    TwoWire* theWire = nullptr;
+    static TwoWire* theWire;
+    float results[9] = {0};
 public:
     AccelWrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 100000);
     virtual ~AccelWrapper() = default;
     virtual void scan() = 0;
-    virtual void read() = 0;
+    virtual float* read();
+    virtual void calibration();
 };
 
 class GeneralPurposeWrapper : public AccelWrapper
@@ -51,7 +56,6 @@ public:
     GeneralPurposeWrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 100000);
     ~GeneralPurposeWrapper() = default;
     void scan() override;
-    void read() override;
 };
 
 class BNO055Wrapper : public AccelWrapper
@@ -61,22 +65,47 @@ class BNO055Wrapper : public AccelWrapper
 public:
     BNO055Wrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 100000);
     ~BNO055Wrapper();
-    void read() override;
+    float* read() override;
     void scan() override;
+    void calibration() override;
 private:
     void displaySensorDetails();
     void displaySensorStatus();
     void displayCalStatus();
 };
 
-// class BNO080Wrapper : public AccelWrapper
-// {
-// private:
-// public:
-//     BNO080Wrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 40000)
-//     : AccelWrapper(wire, sda_io_num, scl_io_num, freq_hz) {}
-//     ~BNO080Wrapper() = default;
-// };
+class BNO080Wrapper : public AccelWrapper
+{
+private:
+    BNO080* bno = nullptr;
+public:
+    BNO080Wrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 400000);
+    ~BNO080Wrapper() = default;
+    float* read() override;
+    void calibration() override;
+    void scan() override;
+};
 
-// void i2c_master_init(int sda_pin, int scl_pin, uint32_t freq_hz = 40000);
-// void i2c_scan();
+class ADXL345Wrapper : public AccelWrapper
+{
+private:
+    Adafruit_ADXL345_Unified *adxl = nullptr;
+public:
+    ADXL345Wrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 100000);
+    ~ADXL345Wrapper() = default;
+    float* read() override;
+    void calibration() override;
+    void scan() override;
+};
+
+class MPU6050Wrapper : public AccelWrapper
+{
+private:
+    Adafruit_MPU6050 *mpu6050 = nullptr;
+public:
+    MPU6050Wrapper(TwoWire* wire = &Wire, int sda_io_num = I2C_MASTER_SDA_IO_0, int scl_io_num = I2C_MASTER_SCL_IO_0, uint32_t freq_hz = 100000);
+    ~MPU6050Wrapper() = default;
+    float* read() override;
+    void calibration() override;
+    void scan() override;
+};

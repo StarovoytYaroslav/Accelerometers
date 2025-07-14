@@ -33,19 +33,26 @@ typedef struct
 } sensor_command_t;
 
 typedef struct {
-    char msg[64];  // or 128, depending on max length you expect
+    char msg[128];  // or 128, depending on max length you expect
     uint32_t timestamp_ms;
 } log_message_t;
 
+BNO055Wrapper *bno055;
+BNO080Wrapper *bno080;
+ADXL345Wrapper *adxl345;
+MPU6050Wrapper *mpu6050;
+
 void bno055_task(void *pvParameters)
 {
+    float* accelData;
     while (1)
     {
+        accelData = bno055->read();
         sensor_data_t data = {
             .sensor_id = 1,
-            .ax = 10.0 /*read_bno055_ax()*/,
-            .ay = 10.0 /*read_bno055_ay()*/,
-            .az = 10.0 /*read_bno055_az()*/,
+            .ax = accelData[0],
+            .ay = accelData[1],
+            .az = accelData[2],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
@@ -62,26 +69,30 @@ void bno055_task(void *pvParameters)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50)); // adjust per your sensor rate
+        vTaskDelay(pdMS_TO_TICKS(10)); // adjust per your sensor rate
     }
 }
 
 void bno080_task(void *pvParameters)
 {
+    float* accelData;
     while (1)
     {
+        accelData = bno080->read();
+        if(accelData == nullptr)
+            continue;
         sensor_data_t data = {
             .sensor_id = 2,
-            .ax = 10.0 /*read_bno055_ax()*/,
-            .ay = 10.0 /*read_bno055_ay()*/,
-            .az = 10.0 /*read_bno055_az()*/,
+            .ax = accelData[0],
+            .ay = accelData[1],
+            .az = accelData[2],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
         sensor_command_t cmd;
         if (xQueueReceive(command_queue, &cmd, 0))
         {
-            if (cmd.target_sensor == 1 || cmd.target_sensor == 0)
+            if (cmd.target_sensor == 2 || cmd.target_sensor == 0)
             {
                 if (strcmp(cmd.cmd, "calibrate") == 0)
                 {
@@ -96,7 +107,79 @@ void bno080_task(void *pvParameters)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50)); // adjust per your sensor rate
+        vTaskDelay(pdMS_TO_TICKS(1)); // adjust per your sensor rate
+    }
+}
+
+void adxl345_task(void *pvParameters)
+{
+    float* accelData;
+    while (1)
+    {
+        accelData = adxl345->read();
+        sensor_data_t data = {
+            .sensor_id = 3,
+            .ax = accelData[0],
+            .ay = accelData[1],
+            .az = accelData[2],
+            .timestamp_ms = esp_log_timestamp()};
+        xQueueSend(sensor_queue, &data, 0);
+
+        sensor_command_t cmd;
+        if (xQueueReceive(command_queue, &cmd, 0))
+        {
+            if (cmd.target_sensor == 3 || cmd.target_sensor == 0)
+            {
+                if (strcmp(cmd.cmd, "calibrate") == 0)
+                {
+                    log_message_t log;
+                    snprintf(log.msg, sizeof(log.msg), "ADXL345 calibration command");
+                    log.timestamp_ms = esp_log_timestamp();
+
+                    xQueueSend(log_queue, &log, 0);
+                    // Serial.println("calibration command");
+                    // bno055_calibrate();  // your implementation
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10)); // adjust per your sensor rate
+    }
+}
+
+void mpu6050_task(void *pvParameters)
+{
+    float* accelData;
+    while (1)
+    {
+        accelData = mpu6050->read();
+        sensor_data_t data = {
+            .sensor_id = 4,
+            .ax = accelData[0],
+            .ay = accelData[1],
+            .az = accelData[2],
+            .timestamp_ms = esp_log_timestamp()};
+        xQueueSend(sensor_queue, &data, 0);
+
+        sensor_command_t cmd;
+        if (xQueueReceive(command_queue, &cmd, 0))
+        {
+            if (cmd.target_sensor == 4 || cmd.target_sensor == 0)
+            {
+                if (strcmp(cmd.cmd, "calibrate") == 0)
+                {
+                    log_message_t log;
+                    snprintf(log.msg, sizeof(log.msg), "ADXL345 calibration command");
+                    log.timestamp_ms = esp_log_timestamp();
+
+                    xQueueSend(log_queue, &log, 0);
+                    // Serial.println("calibration command");
+                    // bno055_calibrate();  // your implementation
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10)); // adjust per your sensor rate
     }
 }
 
@@ -126,7 +209,7 @@ bool get_line_from_uart(char *line, size_t max_len, uint32_t timeout_ms = 100)
                 break;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10)); // allow other tasks to run & prevent WDT
+        vTaskDelay(pdMS_TO_TICKS(5)); // allow other tasks to run & prevent WDT
     }
 
     // If timeout but something was read
@@ -148,9 +231,6 @@ void uart_rx_task(void *pvParams)
         if (get_line_from_uart(line, sizeof(line)))
         {
             log_message_t log;
-            snprintf(log.msg, sizeof(log.msg), line);
-            log.timestamp_ms = esp_log_timestamp();
-            xQueueSend(log_queue, &log, 0);
 
             sensor_command_t cmd = {0};
 
@@ -167,7 +247,9 @@ void uart_rx_task(void *pvParams)
                 strcpy(cmd.cmd, "tare");
             else
                 continue;
-
+            snprintf(log.msg, sizeof(log.msg),"%s and processed to: %d: %s", line, cmd.target_sensor, cmd.cmd);
+            log.timestamp_ms = esp_log_timestamp();
+            xQueueSend(log_queue, &log, 0);
             xQueueSend(command_queue, &cmd, 0);
         }
 
@@ -184,10 +266,6 @@ void uart_tx_task(void *pvParameters)
     while (1)
     {
 
-        // if (xQueueReceive(sensor_queue, &data, portMAX_DELAY)) {
-        //     Serial.printf("ID:%d A:%.2f,%.2f,%.2f T:%lu\n",
-        //                   data.sensor_id, data.ax, data.ay, data.az, data.timestamp_ms);
-        // }
         if (xQueueReceive(sensor_queue, &data, 0))
         {
             Serial.printf("ID:%d A:%.2f,%.2f,%.2f T:%lu\n",
@@ -220,6 +298,11 @@ extern "C" void app_main(void)
 
     Serial.println("Here we start");
 
+    // bno055 = new BNO055Wrapper();
+    // bno080 = new BNO080Wrapper();
+    // adxl345 = new ADXL345Wrapper();
+    mpu6050 = new MPU6050Wrapper();
+
     // Init sensor queue and command queue
     sensor_queue = xQueueCreate(10, sizeof(sensor_data_t));
     command_queue = xQueueCreate(10, sizeof(sensor_command_t));
@@ -227,7 +310,9 @@ extern "C" void app_main(void)
 
     // Create sensor tasks
     // xTaskCreate(bno055_task, "bno055_task", 4096, NULL, 5, NULL);
-    xTaskCreate(bno080_task, "bno080_task", 4096, NULL, 5, NULL);
+    // xTaskCreate(bno080_task, "bno080_task", 4096, NULL, 5, NULL);
+    // xTaskCreate(adxl345_task, "adxl345_task", 4096, NULL, 5, NULL);
+    xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, NULL);
 
     // UART task to read input commands (USB CDC or hardware UART)
     xTaskCreate(uart_rx_task, "uart_rx_task", 4096, NULL, 4, NULL);

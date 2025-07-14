@@ -26,7 +26,7 @@ void configure_gpio()
 void reset_BNO()
 {
     gpio_set_level(RST_PIN, 0);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(50));
     gpio_set_level(RST_PIN, 1);
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(500));
 }

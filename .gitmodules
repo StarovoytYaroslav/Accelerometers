@@ -10,4 +10,10 @@
 [submodule "components/BNO055"]
         path = components/BNO055         
         url = git@github.com:StarovoytYaroslav/Adafruit_BNO055.git
+[submodule "components/ADXL345"]
+        path = components/ADXL345
+        url = git@github.com:StarovoytYaroslav/Adafruit_ADXL345.git
+[submodule "components/MPU6050"]
+        path = components/MPU6050
+        url = git@github.com:StarovoytYaroslav/Adafruit_MPU6050.git
 
