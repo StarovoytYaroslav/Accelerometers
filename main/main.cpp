@@ -22,7 +22,7 @@ QueueHandle_t log_queue;
 typedef struct
 {
     int sensor_id;
-    float ax, ay, az;
+    float ax, ay, az, gx, gy, gz;
     uint32_t timestamp_ms;
 } sensor_data_t;
 
@@ -53,6 +53,9 @@ void bno055_task(void *pvParameters)
             .ax = accelData[0],
             .ay = accelData[1],
             .az = accelData[2],
+            .gx = accelData[3],
+            .gy = accelData[4],
+            .gz = accelData[5],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
@@ -86,6 +89,9 @@ void bno080_task(void *pvParameters)
             .ax = accelData[0],
             .ay = accelData[1],
             .az = accelData[2],
+            .gx = accelData[3],
+            .gy = accelData[4],
+            .gz = accelData[5],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
@@ -122,6 +128,9 @@ void adxl345_task(void *pvParameters)
             .ax = accelData[0],
             .ay = accelData[1],
             .az = accelData[2],
+            .gx = accelData[3],
+            .gy = accelData[4],
+            .gz = accelData[5],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
@@ -158,6 +167,9 @@ void mpu6050_task(void *pvParameters)
             .ax = accelData[0],
             .ay = accelData[1],
             .az = accelData[2],
+            .gx = accelData[3],
+            .gy = accelData[4],
+            .gz = accelData[5],
             .timestamp_ms = esp_log_timestamp()};
         xQueueSend(sensor_queue, &data, 0);
 
@@ -268,13 +280,13 @@ void uart_tx_task(void *pvParameters)
 
         if (xQueueReceive(sensor_queue, &data, 0))
         {
-            Serial.printf("ID:%d A:%.2f,%.2f,%.2f T:%lu\n",
-                          data.sensor_id, data.ax, data.ay, data.az, data.timestamp_ms);
+            Serial.printf("ID:%d A:%.2f,%.2f,%.2f G:%.2f,%.2f,%.2f T:%lu\n",
+                          data.sensor_id, data.ax, data.ay, data.az, data.gx, data.gy, data.gz, data.timestamp_ms);
         }
-        if(xQueueReceive(log_queue, &log, 0))
-        {
-                Serial.printf("[%lu ms] %s\n", log.timestamp_ms, log.msg);
-        }
+        // if(xQueueReceive(log_queue, &log, 0))
+        // {
+        //         Serial.printf("[%lu ms] %s\n", log.timestamp_ms, log.msg);
+        // }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

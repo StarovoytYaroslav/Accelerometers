@@ -296,6 +296,9 @@ float* MPU6050Wrapper::read()
     results[0] = accelEvent.acceleration.x;
     results[1] = accelEvent.acceleration.y;
     results[2] = accelEvent.acceleration.z;
+    results[3] = gyroEvent.gyro.x;
+    results[4] = gyroEvent.gyro.y;
+    results[5] = gyroEvent.gyro.z;
     return results;
 }
 
